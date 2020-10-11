@@ -145,13 +145,13 @@ pub trait BackendSpec: fmt::Debug {
     fn init<'a>(
         &self,
         window_builder: glutin::WindowBuilder,
-        gl_builder: glutin::ContextBuilder<'a>,
+        gl_builder: glutin::ContextBuilder<'a, glutin::NotCurrent>,
         events_loop: &glutin::EventsLoop,
         color_format: gfx::format::Format,
         depth_format: gfx::format::Format,
     ) -> Result<
         (
-            glutin::WindowedContext,
+            glutin::WindowedContext<glutin::PossiblyCurrent>,
             Self::Device,
             Self::Factory,
             gfx::handle::RawRenderTargetView<Self::Resources>,
@@ -170,7 +170,7 @@ pub trait BackendSpec: fmt::Debug {
         depth_view: &gfx::handle::RawDepthStencilView<Self::Resources>,
         color_format: gfx::format::Format,
         depth_format: gfx::format::Format,
-        window: &glutin::WindowedContext,
+        window: &glutin::WindowedContext<glutin::PossiblyCurrent>,
     ) -> Option<(
         gfx::handle::RawRenderTargetView<Self::Resources>,
         gfx::handle::RawDepthStencilView<Self::Resources>,
@@ -245,13 +245,13 @@ impl BackendSpec for GlBackendSpec {
     fn init<'a>(
         &self,
         window_builder: glutin::WindowBuilder,
-        gl_builder: glutin::ContextBuilder<'a>,
+        gl_builder: glutin::ContextBuilder<'a, glutin::NotCurrent>,
         events_loop: &glutin::EventsLoop,
         color_format: gfx::format::Format,
         depth_format: gfx::format::Format,
     ) -> Result<
         (
-            glutin::WindowedContext,
+            glutin::WindowedContext<glutin::PossiblyCurrent>,
             Self::Device,
             Self::Factory,
             gfx::handle::RawRenderTargetView<Self::Resources>,
@@ -289,7 +289,7 @@ impl BackendSpec for GlBackendSpec {
         depth_view: &gfx::handle::RawDepthStencilView<Self::Resources>,
         color_format: gfx::format::Format,
         depth_format: gfx::format::Format,
-        window: &glutin::WindowedContext,
+        window: &glutin::WindowedContext<glutin::PossiblyCurrent>,
     ) -> Option<(
         gfx::handle::RawRenderTargetView<Self::Resources>,
         gfx::handle::RawDepthStencilView<Self::Resources>,
@@ -863,13 +863,13 @@ pub fn set_window_icon<P: AsRef<Path>>(context: &mut Context, path: Option<P>) -
         }
         None => None,
     };
-    context.gfx_context.window.set_window_icon(icon);
+    context.gfx_context.window.window().set_window_icon(icon);
     Ok(())
 }
 
 /// Sets the window title.
 pub fn set_window_title(context: &Context, title: &str) {
-    context.gfx_context.window.set_title(title);
+    context.gfx_context.window.window().set_title(title);
 }
 
 /// Returns a reference to the Glutin window.
@@ -878,7 +878,7 @@ pub fn set_window_title(context: &Context, title: &str) {
 /// to dip into Glutin itself.  But life isn't always ideal.
 pub fn window(context: &Context) -> &glutin::Window {
     let gfx = &context.gfx_context;
-    &gfx.window
+    &gfx.window.window()
 }
 
 /// Returns the size of the window in pixels as (width, height),
@@ -887,6 +887,7 @@ pub fn window(context: &Context) -> &glutin::Window {
 pub fn size(context: &Context) -> (f32, f32) {
     let gfx = &context.gfx_context;
     gfx.window
+        .window()
         .get_outer_size()
         .map(|logical_size| (logical_size.width as f32, logical_size.height as f32))
         .unwrap_or((0.0, 0.0))
